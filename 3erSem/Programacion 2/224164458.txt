@@ -1,0 +1,17 @@
+package main
+
+type carro struct{
+	PosX float. //posicion actual del carro eje x
+	PosY float  //posicion actual del carro eje y
+	freno float = 0 //mutiplicador para frenado inmediato
+	Laptime float //tiempo por vuelta
+	vel float// velocidad maxima del coche
+	accel float //aceleracion del vehiculo mientras no este
+	speed float //rapidez del vehiculo
+	cnitro float = 100 // cantidad
+	vnitro float = 1.5 // modificador para la velocidad base
+	skin img //almacena la imagen o skin del coche
+	dimensionx float //dimension del coche
+	dimensiony float //dimension del coche
+
+}
