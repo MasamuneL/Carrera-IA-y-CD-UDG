@@ -1,0 +1,9 @@
+#verifica si un numero es primo y divisible entre 5
+ 
+def es_cinco(n: int):
+    if n == 5:
+        return True
+    else:
+        return False
+
+print(es_cinco(5))
