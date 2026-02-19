@@ -16,13 +16,14 @@ Funciones:
 import threading
 import time
 
-class cajero(threading.Thread):
-    def __init__(self, id, nombre, status, **kwargs):
+class Cajero(threading.Thread):
+    def __init__(self, id, banco, status=None, **kwargs):
         super().__init__()
         self.Id = id
-        self.name = nombre
         self.status = status
+        self.banco = banco
         self.start()
     
     def run(self):
         print(f'Hilo Cajero {self.Id} ejecutandose ...')
+        self.banco.accion_cajero()

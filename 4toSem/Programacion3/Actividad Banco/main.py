@@ -11,11 +11,14 @@ Aqui se Hace la ejecuscion de  todos los procesos
 
 ### 1. Librerias y programas ##############
 
+from Clientes import Usuario
+from Cajero import Cajero
+import Clientes
 import os
 import time
 from Banco import Banco #Del archivo Banco importa la clase Banco
-from Clientes import usuario
-from Cajero import cajero
+from Clientes import Usuario
+from Cajero import Cajero
 
 ############################################
 
@@ -27,6 +30,17 @@ saldo_boveda = 1000000
 num_clientes = 8
 num_cajeros = 3
 
+#instanciar al banco
 banco = Banco(nombre_banco, saldo_boveda)
 
-banco.accion_cliente()
+#creacion de hilos clientes y cajeros
+cajeros = []
+for i in range(num_cajeros):
+    b = Cajero(i, banco)
+    cajeros.append(b)
+
+clientes = []
+for i in range(num_clientes):
+    c = Usuario(i, banco)
+    clientes.append(c)
+    c.start()
