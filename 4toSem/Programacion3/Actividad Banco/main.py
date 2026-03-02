@@ -43,4 +43,3 @@ clientes = []
 for i in range(num_clientes):
     c = Usuario(i, banco)
     clientes.append(c)
-    c.start()

@@ -13,6 +13,7 @@ FUNCIONES (Banco):
 
 import threading
 import time
+import random
 
 #import Banco
 
@@ -21,8 +22,10 @@ class Usuario(threading.Thread):
         super().__init__() #llamamos al constructor de la clase padre
         self.Id = id_cliente
         self.banco = banco
-        #self.start() #inicia el hilo
+        self.actlist = ["Retirar","Depositar","Consultar","Transferir","BorrarUsuario"]
+        self.start() #inicia el hilo
     
     def run(self):
-        print(f'Hilo Clinte {self.Id} Ejecutandose...')
-        self.banco.accion_cliente()
+        print(f'Cliente {self.Id} llego al banco...')
+        time.sleep(0.02)
+        self.banco.accion_cliente(self.Id)

@@ -25,5 +25,6 @@ class Cajero(threading.Thread):
         self.start()
     
     def run(self):
-        print(f'Hilo Cajero {self.Id} ejecutandose ...')
-        self.banco.accion_cajero()
+        print(f'Cajero {self.Id} empieza operaciones...')
+        time.sleep(0.02)
+        self.banco.accion_cajero(self.Id)
