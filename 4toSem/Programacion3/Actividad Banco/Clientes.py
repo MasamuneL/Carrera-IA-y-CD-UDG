@@ -15,7 +15,7 @@ import threading
 import time
 import random
 
-#import Banco
+from Banco import Banco
 
 class Usuario(threading.Thread):
     def __init__(self, id_cliente, banco, **kwargs):

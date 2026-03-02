@@ -29,9 +29,10 @@ nombre_banco = "Baniorte"
 saldo_boveda = 1000000
 num_clientes = 8
 num_cajeros = 3
+timeout = 20
 
 #instanciar al banco
-banco = Banco(nombre_banco, saldo_boveda)
+banco = Banco(nombre_banco, saldo_boveda,num_clientes,num_cajeros)
 
 #creacion de hilos clientes y cajeros
 cajeros = []
@@ -43,3 +44,14 @@ clientes = []
 for i in range(num_clientes):
     c = Usuario(i, banco)
     clientes.append(c)
+
+#Hacemos Joins a los hilos
+for cliente in clientes:
+    cliente.join(timeout=timeout)
+
+banco.banco_abierto = False
+
+for cajero in cajeros:
+    cajero.join(timeout=timeout)
+
+print("Banco cerrado")

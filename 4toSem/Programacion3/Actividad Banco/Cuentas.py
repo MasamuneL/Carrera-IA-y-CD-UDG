@@ -28,7 +28,7 @@ class Cuenta:
                 self.saldo -= monto
                 return True
             else:
-                print("Saldo insuficiente")
+                print(f"Saldo insuficiente en la cuenta {self.id_cuenta}.")
                 return False
     
     def deposito(self,monto):
@@ -38,5 +38,3 @@ class Cuenta:
 
     def __repr__(self):
         return f"Cuenta {self.id_cuenta} - Saldo: {self.saldo} - Tipo de Cuenta: {self.tipo_cuenta}"
-
-        

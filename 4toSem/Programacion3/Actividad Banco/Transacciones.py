@@ -18,7 +18,7 @@ class Transaccion:
     #Cuando hay un "_" al inicio de una variable, significa que es privada
     _contador = 0
     _lock_contador = threading.Lock()
-    def __init__(self,tipo_transaccion,cuenta_origen,monto,cuenta_destino=None):
+    def __init__(self,tipo_transaccion,cuenta_origen,monto=0,cuenta_destino=None):
         with Transaccion._lock_contador:
             Transaccion._contador += 1
             self.id_transaccion = Transaccion._contador
