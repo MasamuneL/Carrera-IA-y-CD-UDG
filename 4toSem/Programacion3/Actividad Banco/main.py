@@ -11,12 +11,9 @@ Aqui se Hace la ejecuscion de  todos los procesos
 
 ### 1. Librerias y programas ##############
 
-from Clientes import Usuario
-from Cajero import Cajero
-import Clientes
 import os
 import time
-from Banco import Banco #Del archivo Banco importa la clase Banco
+from Banco import Banco  # Del archivo Banco importa la clase Banco
 from Clientes import Usuario
 from Cajero import Cajero
 
@@ -50,6 +47,10 @@ for cliente in clientes:
     cliente.join(timeout=timeout)
 
 banco.banco_abierto = False
+
+# Notificamos a los cajeros que el banco cerro para que salgan del wait()
+with banco.timbre:
+    banco.timbre.notify_all()
 
 for cajero in cajeros:
     cajero.join(timeout=timeout)

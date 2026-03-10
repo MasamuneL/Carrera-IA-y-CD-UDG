@@ -88,8 +88,11 @@ class Banco:
                 while len(self.fila_transacciones) == 0 and self.banco_abierto:
                     print(f"Cajero {id_cajero} esperando transaccion...")
                     self.timbre.wait()
+                # Si el banco cerro y la fila quedo vacia, salimos
+                if len(self.fila_transacciones) == 0:
+                    break
                 # 1. Ver la fila y checar la transaccion proxima
-                tx = self.fila_transacciones.pop(0) # extrae y quita el elemento transaccion 0 'el primero en la fila' de la fila
+                tx = self.fila_transacciones.pop(0)  # extrae y quita el elemento transaccion 0 'el primero en la fila' de la fila
                 # 2. Checar tipo de transaccion
                 tipo = tx.tipo_transaccion
                 # 3. Procesar la transaccion
@@ -125,7 +128,7 @@ class Banco:
         
         
     
-    def borrarusuario(self,usuario):
+    def borrarusuario(self, usuario):
         """
         Permite eliminar un usuario del banco.
         Actualiza los totales del banco y cajero.
@@ -136,9 +139,13 @@ class Banco:
         Returns:
             bool: True si la operación se realizó con éxito.
         """
-        self.userlist.remove(usuario)
-        self.boveda -= usuario.saldo
-        return True
+        with self.timbre:
+            if usuario in self.userlist:
+                self.userlist.remove(usuario)
+                with self.lock_boveda:
+                    self.boveda -= usuario.saldo
+                return True
+        return False
     
 """# Acciones del cajero
         # 0. Esperar a que haya una transaccion en la fila
