@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es_MX">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>{{ if $.Titulo }}{{ $.Titulo }}{{ else }}Error{{ end }}</title>
+		<link rel="shortcut icon" href="/assets/img/favicon-generico-32.png" type="image/png">
+		<link rel="stylesheet" type="text/css" href="/assets/css/estilo.css">
+		<link rel="stylesheet" type="text/css" href="/assets/css/fontawesome.min.css">
+
+		<script defer src="/assets/js/htmx.js"></script>
+		<script defer src="/assets/js/app.js"></script>
+	</head>
+
+	<body class="h-full text-white bg-cyan-950">
+		<div id="contenido" hx-target="#contenido" hx-swap="innerHTML show:no-scroll" hx-push-url="false" hx-history="false" class="flex flex-col overflow-y-auto h-dvh scrollbar-stable">
+			<main class="flex flex-col items-center justify-center grow gap-4">
+				<h3 class="text-3xl">
+					Error {{ .StatusCode }}
+				</h3>
+				<p class="text-lg">
+					{{ .Mensaje }}
+				</p>
+				<a href="{{ .Referer }}" class="text-blue-400 hover:text-blue-500">Volver a intentarlo</a>
+			</main>
+			<footer class="flex flex-col items-center gap-4 p-4">
+				<img src="/assets/img/favicon-generico-32.png" alt="Logo">
+				<a href="/">Volver al inicio</a>
+			</footer>
+		</div>
+	</body>
+</html>

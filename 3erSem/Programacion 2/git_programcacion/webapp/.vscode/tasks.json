@@ -1,0 +1,71 @@
+{
+	"version": "2.0.0",
+	"type": "shell",
+	"isBackground": false,
+	"problemMatcher": [],
+	"presentation": {
+		"echo": false,
+		"reveal": "always",
+		"focus": false,
+		"panel": "shared",
+		"showReuseMessage": false,
+		"clear": false,
+	},
+	"tasks": [
+		{
+			"label": "Ejecutar",
+			"detail": "Ejecutar aplicación en ambiente de desarrollo.",
+			"command": "mkdir -p $(realpath ./_testdata); webapp -src=$(realpath .) -dir=$(realpath ./_testdata)",
+			"dependsOn": ["Instalar dev"], "dependsOrder": "sequence",
+			"isBackground": true,
+		},
+		{
+			"label": "Tailwind once",
+			"detail": "Compilar estilos CSS una vez.",
+			"command": "tailwindcss -i ./assets/source.css -o ./assets/css/estilo.css",
+		},
+		{
+			"label": "Tailwind watch",
+			"detail": "Compilar estilos CSS y observar cambios.",
+			"command": "tailwindcss -w -i ./assets/source.css -o ./assets/css/estilo.css",
+			"isBackground": true,
+		},
+		{
+			"label": "PargoCode",
+			"detail": "Generación de código mediante interfaz web.",
+			"command": "sleep 1 && pargocode",
+			"isBackground": true,
+		},
+		{
+			"label": "Instalar dev",
+			"detail": "Instalar app versión desarrollo.",
+			"command": "CGO_ENABLED=0 go install -ldflags \"-X main.BUILD_INFO=$(date '+%Y-%m-%d%n'):$(git rev-parse --short HEAD) -X main.AMBIENTE=DEV\" ./webapp && echo '[✔] App instalada'",
+			"hide": true,
+		},
+		{
+			"label": "Instalar prod",
+			"detail": "Instalar app versión producción.",
+			"command": "CGO_ENABLED=0 go install -ldflags \"-X main.BUILD_INFO=$(date '+%Y-%m-%d%n'):$(git rev-parse --short HEAD) -X main.AMBIENTE=PROD\" ./webapp && echo '[✔] App instalada'",
+		},
+		{
+			"label": "Compilar",
+			"detail": "Compilar ejecutable antes de desplegar",
+			"command": "GOOS=linux CGO_ENABLED=0 go build -ldflags \"-X main.BUILD_INFO=$(date '+%Y-%m-%d%n'):$(git rev-parse --short HEAD) -X main.AMBIENTE=PROD\" -o /tmp/webapp ./webapp && echo '[✔] App compilada\n'",
+			"hide": true,
+		},
+		{
+			"label": "Deploy",
+			"detail": "Enviar ejecutable al servidor remoto.",
+			"command": "rsync -avh --progress /tmp/webapp ${input:remoteHost}:/usr/local/bin/ && echo '[✔] App enviada a ${input:remoteHost}\n'",
+			"dependsOn": ["Compilar"], "dependsOrder": "sequence",
+			"isBackground": false,
+		},
+
+	],
+	"inputs": [
+		{
+			"id": "remoteHost", "description": "Dirección del remote host",
+			"default": "localhost", "type": "promptString"
+		},
+	]
+}

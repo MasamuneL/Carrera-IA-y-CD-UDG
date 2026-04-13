@@ -1,0 +1,26 @@
+# Ignorar carpetas de dependencias
+node_modules/
+bin/
+obj/
+
+# Ignorar archivos de configuración personal o secretos
+.env
+config.json
+
+# Mac system files
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# Office temporary files
+~$*
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Logs
+log.txt
+
+# Ignorar todos los archivos que terminen en .log
+*.log
