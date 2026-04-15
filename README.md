@@ -6,7 +6,7 @@ Este espacio sirve como mi entorno de trabajo distribuido entre mis diferentes e
 
 ## 🛠 Tecnologías y Herramientas
 Principales tecnologías exploradas en este repositorio:
-* **Lenguajes:** Python, R, SQL.
+* **Lenguajes:** Python, R, SQL, Go, etc.
 * **Librerías:** Pandas, NumPy, Scikit-learn, TensorFlow/PyTorch, Matplotlib.
 * **Entornos:** Jupyter Notebooks, VS Code.
 
