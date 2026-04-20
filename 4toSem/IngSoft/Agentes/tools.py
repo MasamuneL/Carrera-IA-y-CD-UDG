@@ -137,3 +137,52 @@ def descargar_libro(mirror_url: str, titulo_sugerido: str, carpeta_destino: str 
 
     except Exception as e:
         return f"Error durante la descarga: {str(e)}"
+    
+@tool
+def buscar_libgen_por_titulo(titulo: str):
+    """
+    Plan B: Busca un libro en LibGen por su título cuando la búsqueda por ISBN falla.
+    """
+    s = LibgenSearch()
+    try:
+        # Buscamos por título
+        resultados = s.search_title(titulo)
+        
+        if not resultados:
+            return f"No se encontraron resultados por título para: {titulo}"
+            
+        mejores_resultados = resultados[:3]
+        biblioteca_links = []
+        
+        for libro in mejores_resultados:
+            info = {
+                "titulo": libro.get("Title"),
+                "autor": libro.get("Author"),
+                "formato": libro.get("Extension"),
+                "tamaño": libro.get("Size"),
+                "link_descarga": libro.get("Mirror_1")
+            }
+            biblioteca_links.append(info)
+            
+        return biblioteca_links
+    except Exception as e:
+        return f"Error en la búsqueda por título en LibGen: {str(e)}"
+    
+@tool
+def verificar_archivo_local(titulo_sugerido: str, carpeta_destino: str = "biblioteca"):
+    """
+    Verifica si un libro ya fue descargado previamente en la carpeta local.
+    Úsalo ANTES de intentar descargar un libro.
+    """
+    if not os.path.exists(carpeta_destino):
+        return "La carpeta no existe aún. El libro no está descargado."
+        
+    nombre_limpio = "".join(c for c in titulo_sugerido if c.isalnum() or c in (' ', '.', '_')).rstrip()
+    
+    # Revisamos si existe el archivo en pdf o epub
+    archivos_existentes = os.listdir(carpeta_destino)
+    for archivo in archivos_existentes:
+        if nombre_limpio.lower() in archivo.lower():
+            return f"¡El libro ya existe localmente como: {archivo}! No es necesario descargarlo de nuevo."
+            
+    return "El libro no existe localmente. Procede a descargarlo."
