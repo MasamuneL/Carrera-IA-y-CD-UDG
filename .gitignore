@@ -7,7 +7,8 @@ obj/
 .env
 config.json
 
-# Mac system files
+# Mac system files and cache
+**/__pycache__/
 .DS_Store
 **/.DS_Store
 Thumbs.db
