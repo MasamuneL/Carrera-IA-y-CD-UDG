@@ -1,0 +1,28 @@
+Gaming_Academic_Performance.csv
+
+About Dataset
+🎮 Gaming vs Academic Performance Dataset
+
+This dataset explores how gaming habits influence student academic performance.
+
+Unlike simple datasets, this one models realistic behavior patterns:
+
+    Moderate gaming can slightly improve cognitive performance
+    Excessive gaming negatively impacts grades
+    Study hours, sleep, and attendance strongly influence outcomes
+    Random noise simulates real-world variability
+
+Features Included:
+
+    Gaming hours, study hours, sleep hours
+    Reaction time (cognitive performance)
+    Stress levels
+    Attendance and device usage
+    Academic grades (target variable)
+
+Use Cases:
+
+    Predict student performance (regression models)
+    Behavioral data analysis
+    Data visualization (EDA)
+    Machine learning projects
