@@ -1,4 +1,5 @@
 import trainer
+import predict
 
 if __name__ == '__main__':
     X_train, X_test, y_train, y_test, X_val, y_val = trainer.cargar_dataset()
@@ -18,4 +19,10 @@ if __name__ == '__main__':
     # Evaluacion con val set
     val_loss, val_mae, val_r2 = model.evaluate(X_val, y_val, verbose=0)
     print(f"Val  — Loss: {val_loss:.4f} | MAE: {val_mae:.4f} | R²: {val_r2:.4f}")
+
+    # Prediccion batch sobre val set
+    preds_val = predict.predecir_batch(X_val.values.tolist())
+    print("\nPredicciones batch (val set):")
+    for i, (pred, real) in enumerate(zip(preds_val, y_val.tolist())):
+        print(f"  [{i}] Predicho: {pred:.4f} | Real: {real:.4f}")
 
