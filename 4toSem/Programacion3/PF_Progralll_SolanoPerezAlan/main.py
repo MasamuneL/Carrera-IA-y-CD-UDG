@@ -13,12 +13,12 @@ if __name__ == '__main__':
     trainer.guardar_modelo(model)
 
     # Evaluacion con test set
-    test_loss, test_mae, test_r2 = model.evaluate(X_test, y_test, verbose=0)
-    print(f"Test — Loss: {test_loss:.4f} | MAE: {test_mae:.4f} | R²: {test_r2:.4f}")
+    test_loss, test_mse, test_mae, test_r2 = model.evaluate(X_test, y_test, verbose=0)
+    print(f"Test — Loss: {test_loss:.4f} | MSE: {test_mse:.4f} | MAE: {test_mae:.4f} | R²: {test_r2:.4f}")
 
     # Evaluacion con val set
-    val_loss, val_mae, val_r2 = model.evaluate(X_val, y_val, verbose=0)
-    print(f"Val  — Loss: {val_loss:.4f} | MAE: {val_mae:.4f} | R²: {val_r2:.4f}")
+    val_loss, val_mse, val_mae, val_r2 = model.evaluate(X_val, y_val, verbose=0)
+    print(f"Val  — Loss: {val_loss:.4f} | MSE: {val_mse:.4f} | MAE: {val_mae:.4f} | R²: {val_r2:.4f}")
 
     # Prediccion batch sobre val set
     preds_val = predict.predecir_batch(X_val.values.tolist())
