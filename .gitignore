@@ -24,3 +24,14 @@ log.txt
 
 # Ignorar todos los archivos que terminen en .log
 *.log
+
+# IDE
+.idea/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Model files
+*.keras
+*.h5

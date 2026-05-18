@@ -1,5 +1,5 @@
 import trainer
-import predict
+import thread
 
 if __name__ == '__main__':
     X_train, X_test, y_train, y_test, X_val, y_val = trainer.cargar_dataset()
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     print(f"Val  — Loss: {val_loss:.4f} | MSE: {val_mse:.4f} | MAE: {val_mae:.4f} | R²: {val_r2:.4f}")
 
     # Prediccion batch sobre val set
-    preds_val = predict.predecir_batch(X_val.values.tolist())
+    preds_val = thread.predecir_batch(X_val.values.tolist())
     print("\nPredicciones batch (val set):")
     for i, (pred, real) in enumerate(zip(preds_val, y_val.tolist())):
         print(f"  [{i}] Predicho: {pred:.4f} | Real: {real:.4f}")
