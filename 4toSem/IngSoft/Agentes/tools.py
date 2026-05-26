@@ -1,188 +1,193 @@
 from tavily import TavilyClient
 import os
 from dotenv import load_dotenv
-import json
 import requests
 from bs4 import BeautifulSoup
 from langchain_core.tools import tool
-from libgen_api import LibgenSearch
 
 load_dotenv()
 
+LIBGEN_BASE = "https://libgen.li"
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+
+def _buscar_libgen(query: str, column: str = "title") -> list:
+    """Búsqueda interna en libgen.li, devuelve lista de resultados."""
+    url = f"{LIBGEN_BASE}/index.php"
+    params = {"req": query, "column": column, "res": 10, "sort": "year", "sortmode": "DESC"}
+    resp = requests.get(url, params=params, headers=HEADERS, timeout=20)
+    resp.raise_for_status()
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    table = soup.find("table", {"id": "tablelibgen"})
+    if not table:
+        return []
+
+    resultados = []
+    for row in table.find_all("tr")[1:]:
+        cols = row.find_all("td")
+        if len(cols) < 9:
+            continue
+
+        title_text = cols[0].get_text(strip=True)
+        edition_link = cols[0].find("a", href=lambda h: h and "edition.php" in h)
+        direct_link = cols[6].find("a", href=lambda h: h and "file.php" in h)
+        mirror_links = [a["href"] for a in cols[8].find_all("a", href=True)]
+
+        # Priorizar ads.php (funciona sin login) sobre file.php (requiere login)
+        mirrors = []
+        for m in mirror_links:
+            if "ads.php" in m:
+                full = m if m.startswith("http") else f"{LIBGEN_BASE}{m}"
+                mirrors.insert(0, full)
+            elif m not in mirrors:
+                mirrors.append(m if m.startswith("http") else f"{LIBGEN_BASE}{m}")
+
+        resultados.append({
+            "titulo": title_text,
+            "autor": cols[1].get_text(strip=True),
+            "editorial": cols[2].get_text(strip=True),
+            "año": cols[3].get_text(strip=True),
+            "formato": cols[7].get_text(strip=True),
+            "tamaño": cols[6].get_text(strip=True).split("\n")[0].strip(),
+            "mirrors": mirrors,
+        })
+
+    return resultados
+
+
 @tool
 def busqueda_tavily(query):
+    """Busca en la web usando Tavily. Úsala para encontrar libros y artículos relevantes sobre un tema."""
     tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
     response = tavily_client.search(query)
     return response
 
+
 @tool
 def buscar_y_extraer_isbn(query):
-    """
-    Busca un libro en OpenLibrary y extrae el ISBN más relevante.
-    """
+    """Busca un libro en OpenLibrary y extrae el ISBN más relevante."""
     query_clean = query.replace(" ", "+")
-    headers = {"User-Agent": "Athena (alan.solano6445@alumnos.udg.mx)"}
-    
+    ol_headers = {"User-Agent": "Athena (alan.solano6445@alumnos.udg.mx)"}
+
     try:
-        response = requests.get(f'https://openlibrary.org/search.json?q={query_clean}', headers=headers)
+        response = requests.get(
+            f"https://openlibrary.org/search.json?q={query_clean}",
+            headers=ol_headers,
+            timeout=15,
+        )
         data = response.json()
-        
-        # 1. Verificar si hay resultados
+
         if data.get("numFound", 0) > 0:
-            # Tomamos el primer libro (el más relevante)
             primer_libro = data["docs"][0]
-            
-            # 2. Intentar extraer la lista de ISBNs
             isbns = primer_libro.get("isbn", [])
-            
             if isbns:
-                # 3. Preferir ISBN de 13 dígitos (empiezan con 978)
                 isbn_13 = next((i for i in isbns if len(i) == 13), isbns[0])
                 return {
                     "titulo": primer_libro.get("title"),
                     "autor": primer_libro.get("author_name", ["Desconocido"])[0],
-                    "isbn": isbn_13
+                    "isbn": isbn_13,
                 }
-        
+
         return "No se encontró un ISBN válido para este tema."
-    
+
     except Exception as e:
         return f"Error en la búsqueda: {str(e)}"
 
+
 @tool
 def obtener_enlaces_libgen(isbn: str):
-    """
-    Busca un libro en Library Genesis usando su ISBN y devuelve los 
-    enlaces de descarga de los mejores 3 resultados.
-    """
-    s = LibgenSearch()
-    
+    """Busca un libro en libgen.li por ISBN y devuelve los mejores 3 resultados con mirrors de descarga."""
     try:
-        # 1. Realizar la búsqueda por ISBN
-        # El ISBN debe ser un string sin guiones
-        resultados = s.search_isbn(isbn)
-        
+        resultados = _buscar_libgen(isbn, column="identifier")
         if not resultados:
             return f"No se encontraron archivos en LibGen para el ISBN: {isbn}"
-
-        # 2. Seleccionar los mejores (máximo 3)
-        # Aquí podrías añadir lógica extra, como preferir 'pdf' o 'epub'
-        mejores_resultados = resultados[:3]
-        
-        biblioteca_links = []
-        
-        for libro in mejores_resultados:
-            # Extraemos la información clave para el agente
-            info = {
-                "titulo": libro.get("Title"),
-                "autor": libro.get("Author"),
-                "formato": libro.get("Extension"),
-                "tamaño": libro.get("Size"),
-                "link_descarga": libro.get("Mirror_1") # Usualmente el mirror principal
-            }
-            biblioteca_links.append(info)
-            
-        return biblioteca_links
-
+        return resultados[:3]
     except Exception as e:
         return f"Error al conectar con LibGen: {str(e)}"
-    
-@tool
-def descargar_libro(mirror_url: str, titulo_sugerido: str, carpeta_destino: str = "biblioteca"):
-    """
-    Navega al mirror de LibGen, encuentra el enlace de descarga real 
-    y guarda el libro en una carpeta local.
-    """
-    try:
-        # 1. Crear carpeta si no existe
-        if not os.path.exists(carpeta_destino):
-            os.makedirs(carpeta_destino)
 
-        # 2. Entrar a la página del mirror (ej. library.lol)
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(mirror_url, headers=headers)
-        soup = BeautifulSoup(response.text, 'html.parser')
 
-        # 3. Buscar el enlace que dice "GET" (es el estándar de LibGen)
-        link_final = soup.find('a', string=lambda t: t and 'GET' in t.upper())
-        if not link_final:
-            # Intento alternativo por si cambió el diseño
-            link_final = soup.select_one('#download a') 
-            
-        if not link_final or not link_final.get('href'):
-            return "No se pudo encontrar el enlace de descarga directa en el mirror."
-
-        direct_url = link_final['href']
-
-        # 4. Limpiar el nombre del archivo
-        # Quitamos caracteres prohibidos en nombres de archivos
-        nombre_limpio = "".join(c for c in titulo_sugerido if c.isalnum() or c in (' ', '.', '_')).rstrip()
-        
-        # Determinar extensión (si el mirror nos dice que es pdf o epub)
-        extension = ".pdf" # Default
-        if "epub" in mirror_url.lower() or "epub" in direct_url.lower():
-            extension = ".epub"
-            
-        ruta_archivo = os.path.join(carpeta_destino, f"{nombre_limpio}{extension}")
-
-        # 5. Descargar el archivo en "streams" (pedazos) para no saturar la RAM
-        print(f"Descargando: {titulo_sugerido}...")
-        with requests.get(direct_url, stream=True, headers=headers) as r:
-            r.raise_for_status()
-            with open(ruta_archivo, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-
-        return f"¡Éxito! Libro guardado en: {ruta_archivo}"
-
-    except Exception as e:
-        return f"Error durante la descarga: {str(e)}"
-    
 @tool
 def buscar_libgen_por_titulo(titulo: str):
-    """
-    Plan B: Busca un libro en LibGen por su título cuando la búsqueda por ISBN falla.
-    """
-    s = LibgenSearch()
+    """Plan B: Busca un libro en libgen.li por título cuando la búsqueda por ISBN falla."""
     try:
-        # Buscamos por título
-        resultados = s.search_title(titulo)
-        
+        resultados = _buscar_libgen(titulo, column="title")
         if not resultados:
             return f"No se encontraron resultados por título para: {titulo}"
-            
-        mejores_resultados = resultados[:3]
-        biblioteca_links = []
-        
-        for libro in mejores_resultados:
-            info = {
-                "titulo": libro.get("Title"),
-                "autor": libro.get("Author"),
-                "formato": libro.get("Extension"),
-                "tamaño": libro.get("Size"),
-                "link_descarga": libro.get("Mirror_1")
-            }
-            biblioteca_links.append(info)
-            
-        return biblioteca_links
+        return resultados[:3]
     except Exception as e:
         return f"Error en la búsqueda por título en LibGen: {str(e)}"
-    
+
+
 @tool
-def verificar_archivo_local(titulo_sugerido: str, carpeta_destino: str = "biblioteca"):
+def descargar_libro(mirrors: list, titulo_sugerido: str, carpeta_destino: str = "biblioteca"):
     """
-    Verifica si un libro ya fue descargado previamente en la carpeta local.
-    Úsalo ANTES de intentar descargar un libro.
+    Descarga un libro probando cada mirror en orden hasta que uno funcione.
+    Recibe la lista 'mirrors' del resultado de búsqueda de libgen.
+    El primer mirror suele ser descarga directa (libgen.li/file.php).
     """
     if not os.path.exists(carpeta_destino):
+        os.makedirs(carpeta_destino)
+
+    nombre_limpio = "".join(c for c in titulo_sugerido if c.isalnum() or c in (" ", ".", "_")).rstrip()
+    errores = []
+
+    for mirror_url in mirrors:
+        try:
+            if not mirror_url.startswith("http"):
+                mirror_url = f"{LIBGEN_BASE}{mirror_url}"
+
+            sess = requests.Session()
+            sess.headers.update(HEADERS)
+
+            # Scraping del botón GET (ads.php y otros mirrors externos)
+            response = sess.get(mirror_url, timeout=15)
+            soup = BeautifulSoup(response.text, "html.parser")
+            link_final = soup.find("a", string=lambda t: t and "GET" in t.upper())
+            if not link_final:
+                link_final = soup.select_one("#download a")
+            if not link_final or not link_final.get("href"):
+                errores.append(f"{mirror_url}: enlace GET no encontrado")
+                continue
+
+            href = link_final["href"]
+            # Resolver URL relativa
+            if href.startswith("http"):
+                direct_url = href
+            else:
+                from urllib.parse import urljoin
+                direct_url = urljoin(mirror_url, href)
+
+            print(f"Descargando desde: {mirror_url}")
+            with sess.get(direct_url, stream=True, timeout=90) as r:
+                r.raise_for_status()
+                content_type = r.headers.get("Content-Type", "")
+                if "html" in content_type:
+                    errores.append(f"{mirror_url}: respuesta HTML en lugar de archivo")
+                    continue
+                extension = ".epub" if "epub" in content_type or "epub" in direct_url.lower() else ".pdf"
+                ruta = os.path.join(carpeta_destino, f"{nombre_limpio}{extension}")
+                with open(ruta, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            return f"Exito! Libro guardado en: {ruta}"
+
+        except Exception as e:
+            errores.append(f"{mirror_url}: {str(e)}")
+            continue
+
+    return "Todos los mirrors fallaron:\n" + "\n".join(errores)
+
+
+@tool
+def verificar_archivo_local(titulo_sugerido: str, carpeta_destino: str = "biblioteca"):
+    """Verifica si un libro ya fue descargado previamente. Úsalo ANTES de intentar descargar."""
+    if not os.path.exists(carpeta_destino):
         return "La carpeta no existe aún. El libro no está descargado."
-        
-    nombre_limpio = "".join(c for c in titulo_sugerido if c.isalnum() or c in (' ', '.', '_')).rstrip()
-    
-    # Revisamos si existe el archivo en pdf o epub
-    archivos_existentes = os.listdir(carpeta_destino)
-    for archivo in archivos_existentes:
+
+    nombre_limpio = "".join(c for c in titulo_sugerido if c.isalnum() or c in (" ", ".", "_")).rstrip()
+    for archivo in os.listdir(carpeta_destino):
         if nombre_limpio.lower() in archivo.lower():
-            return f"¡El libro ya existe localmente como: {archivo}! No es necesario descargarlo de nuevo."
-            
+            return f"El libro ya existe localmente como: {archivo}. No es necesario descargarlo."
+
     return "El libro no existe localmente. Procede a descargarlo."
